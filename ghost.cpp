@@ -23,7 +23,7 @@
 
 using namespace std;
 
-ghost::ghost() : ghost::ghost(static_cast<attr_t>(0), make_pair(-1, -1)) {}
+ghost::ghost() : ghost::ghost(static_cast<attr_t>(-1), make_pair(-1, -1)) {}
 ghost::ghost(attr_t color, pair<int, int> start_pos) {
 	start_pos_x = start_pos.first;
 	start_pos_y = start_pos.second;

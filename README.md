@@ -1,7 +1,7 @@
 Cppac-man
 =========
 
-The aim of this project is to create a fully-functional Pac-Man.<br />
+The aim of this project is to create a fully-functional Pac-Man in the <u>console</u>.<br />
 The source code of this project is desired to be pure <b>C++</b>.<br />
 Object-oriented code is favored, yet not forced.<br />
 

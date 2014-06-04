@@ -41,7 +41,7 @@ namespace utils {
 			*dp = *sp;
 		return src;
 	}
-}  // file
+}  // utils
 
 #endif  // UTILS_HPP
 

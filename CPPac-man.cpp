@@ -97,6 +97,7 @@ using namespace utils;
 //  SO
 //  EM
 //  STX
+//  Any set of characters
 level * load_level(const string & level_filepath);
 bool check_level_integrity(const string & level_filepath);
 
@@ -174,6 +175,7 @@ bool check_level_integrity(const string & level_filepath) {
 	}
 	not_ok |= lvl.get() != CHR_EM;
 	not_ok |= lvl.get() != CHR_STX;
+	not_ok |= lvl.get() == ifstream::traits_type::eof();
 	return !not_ok;
 }
 
