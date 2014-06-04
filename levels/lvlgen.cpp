@@ -8,25 +8,32 @@ using namespace std;
 int main(int, char * argv[]) {
 	string output_filename = "file0.lvl";
 	int ghost_amount = 1;
+	int wall_amount = 10;
 
 	for(unsigned int idx = 1; argv[idx]; ++idx) {
 		const char * const arg = argv[idx];
-		const unsigned int strlen_arg = strlen(arg);
 		if(*arg == '-' && arg[1]) {
-			if(strlen_arg > 9 && memcmp(arg, "--ghosts=", 9))
-				ghost_amount = atoi(arg);
+			if(!memcmp(arg, "--ghosts=", 9))
+				ghost_amount = atoi(arg + 9);
+			else if(!memcmp(arg, "--walls=", 8))
+				wall_amount = atoi(arg + 8);
 		} else
 			output_filename = arg;
 	}
 
 	if(ghost_amount <= 0)
 		ghost_amount = 1;
+	if(wall_amount <= 0)
+		wall_amount = 10;
 
-	printf("Making level-file of name \"%s\" with %d ghosts.\nNote: you MUST edit the file and put the proper data into it.", output_filename.c_str(), ghost_amount);
+	printf("Making level-file of name \"%s\" with %d ghosts and %d walls.\nNote: you MUST edit the file and put the proper data into it.", output_filename.c_str(), ghost_amount, wall_amount);
 
 	ofstream ofile(output_filename);
 	ofile << CHR_SOH << CHR_SI << "<lvl he>,<lvl wi>" << CHR_SO << CHR_EM << CHR_SI << ghost_amount;
 	for(int i = 0; i < ghost_amount; ++i)
 		ofile << CHR_ETB << "<ghost pos x>,<ghost pos y>,<attrs>";
-	ofile << CHR_SO << CHR_EM << CHR_STX << '_';
+	ofile << CHR_SO << CHR_EM << CHR_SI << wall_amount;
+	for(int i = 0; i < wall_amount; ++i)
+		ofile << CHR_ETB << "<wall pos x>,<wall pos y>";
+	ofile << CHR_SO << CHR_STX << '_';
 }

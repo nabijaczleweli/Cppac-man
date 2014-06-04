@@ -96,8 +96,18 @@ using namespace utils;
 //    end repeating
 //  SO
 //  EM
+//  SI
+//  Level's overall amount of walls (decimal)
+//    now, repeating Level's overall amount of walls times :
+//  ETB
+//  Wall's position X (decimal)
+//  ,
+//  Wall's position Y (decimal)
+//    end repeating
+//  SO
 //  STX
 //  Any set of characters
+
 level * load_level(const string & level_filepath);
 bool check_level_integrity(const string & level_filepath);
 
@@ -117,8 +127,43 @@ int main(int, char * argv[]) {
 	string level_filename;
 	for(unsigned int idx = 1; argv[idx]; ++idx) {
 		const char * const arg = argv[idx];
-		if(*arg == '-' && arg[1]) {}
-		else
+		if(*arg == '-' && arg[1]) {
+			if(!memcmp(arg, "--help-level-format", 18)) {
+				cout << "The level format is as follows:\n"
+				        "\n"
+                "SOH\n"
+                "SI\n"
+                "Level's overall height (decimal)\n"
+                ",\n"
+                "Level's overall width (decimal)\n"
+                "SO\n"
+                "EM\n"
+                "SI\n"
+                "Level's overall amount of ghosts (decimal)\n"
+                "\tnow, repeating <Level's overall amount of ghosts> times :\n"
+                "ETB\n"
+                "Ghost's beginning position X (decimal)\n"
+                ",\n"
+                "Ghost's beginning position Y (decimal)\n"
+                ",\n"
+                "Set of ORed attributes (decimal, attr_t)\n"
+                "\tend repeating\n"
+                "SO\n"
+                "EM\n"
+                "SI\n"
+                "Level's overall amount of walls (decimal)\n"
+                "\tnow, repeating <Level's overall amount of walls> times :\n"
+                "ETB\n"
+                "Wall's position X (decimal)\n"
+                ",\n"
+                "Wall's position Y (decimal)\n"
+                "\tend repeating\n"
+                "SO\n"
+                "STX\n"
+                "Any set of characters\n";
+				return 0;
+			}
+		}	else
 			level_filename = arg;
 	}
 	if(!does_file_exist(level_filename.c_str()))
@@ -151,6 +196,7 @@ bool check_level_integrity(const string & level_filepath) {
 	not_ok |= lvl.get() != CHR_SO;
 	not_ok |= lvl.get() != CHR_EM;
 	not_ok |= lvl.get() != CHR_SI;
+
 	string amount_of_ghosts_string;
 	while(lvl.peek() != CHR_ETB && lvl.peek() != ifstream::traits_type::eof()) {
 		char chr = lvl.get();
@@ -168,12 +214,29 @@ bool check_level_integrity(const string & level_filepath) {
 		not_ok |= lvl.get() != ',';
 		while(!(lvl.peek() == CHR_ETB || lvl.peek() == CHR_SO) && lvl.peek() != ifstream::traits_type::eof())
 			not_ok |= !isdigit(lvl.get());
-		if(amount_of_ghosts_int == 1 || i == amount_of_ghosts_int - 2)
+		if(i >= amount_of_ghosts_int - 1)
 			not_ok |= lvl.get() != CHR_SO;
-		else
-			not_ok |= lvl.get() != CHR_ETB;
 	}
 	not_ok |= lvl.get() != CHR_EM;
+	not_ok |= lvl.get() != CHR_SI;
+
+	string amount_of_walls_string;
+	while(lvl.peek() != CHR_ETB && lvl.peek() != ifstream::traits_type::eof()) {
+		char chr = lvl.get();
+		not_ok |= !isdigit(chr);
+		amount_of_walls_string.push_back(chr);
+	}
+	int amount_of_walls_int = atoi(amount_of_walls_string.c_str());
+	for(int i = 0; i < amount_of_walls_int; ++i) {
+		not_ok |= lvl.get() != CHR_ETB;
+		while(lvl.peek() != ',' && lvl.peek() != ifstream::traits_type::eof())
+			not_ok |= !isdigit(lvl.get());
+		not_ok |= lvl.get() != ',';
+		while(!(lvl.peek() == CHR_ETB || lvl.peek() == CHR_SO) && lvl.peek() != ifstream::traits_type::eof())
+			not_ok |= !isdigit(lvl.get());
+		if(i >= amount_of_walls_int - 1)
+			not_ok |= lvl.get() != CHR_SO;
+	}
 	not_ok |= lvl.get() != CHR_STX;
 	not_ok |= lvl.get() == ifstream::traits_type::eof();
 	return !not_ok;

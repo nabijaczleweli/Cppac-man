@@ -33,7 +33,7 @@ CPPAR = -s -Os -std=c++11 -Wall -Wextra -pipe -fomit-frame-pointer
 
 .PHONY : clean
 
-all : levelmaker CPPac-man.o ghost.o
+all : CPPac-man.o ghost.o levelmaker
 	$(CPP) $(CPPAR) -oCPPac-man$(EXE) $(filter %.o,$^)
 
 levelmaker : levels/lvlgen.o
