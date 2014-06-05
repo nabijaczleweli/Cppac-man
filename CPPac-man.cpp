@@ -55,6 +55,8 @@
 #include <cstdlib>
 #include <iostream>
 #include <fstream>
+#include <chrono>
+#include <algorithm>
 #include <curses.h>
 // <tui.h>?
 #include "utils.hpp"
@@ -62,6 +64,7 @@
 #include "ASCII charcodes.hpp"
 
 using namespace std;
+using namespace std::chrono;
 using namespace utils;
 
 //
@@ -108,7 +111,7 @@ using namespace utils;
 //  STX
 //  Any set of characters
 
-level * load_level(const string & level_filepath);
+level load_level(const string & level_filepath, WINDOW * const screen);
 bool check_level_integrity(const string & level_filepath);
 
 //
@@ -124,7 +127,7 @@ bool check_level_integrity(const string & level_filepath);
 //
 
 int main(int, char * argv[]) {
-	string level_filename;
+	vector<string> level_filenames;
 	for(unsigned int idx = 1; argv[idx]; ++idx) {
 		const char * const arg = argv[idx];
 		if(*arg == '-' && arg[1]) {
@@ -164,11 +167,34 @@ int main(int, char * argv[]) {
 				return 0;
 			}
 		}	else
-			level_filename = arg;
+			level_filenames.emplace_back(arg);
 	}
-	if(!does_file_exist(level_filename.c_str()))
-		return 1;
-	cout << boolalpha << check_level_integrity(level_filename);
+
+	unique(level_filenames.begin(), level_filenames.end());
+	remove_if(level_filenames.begin(), level_filenames.end(), [](const string & level_filename) {
+		const bool does_exist = does_file_exist(level_filename.c_str());
+		if(!does_exist)
+			cout << level_filename << " does not exist.\n";
+		return !does_exist;
+	});
+	remove_if(level_filenames.begin(), level_filenames.end(), [](const string & level_filename) {
+		const bool is_a_level = check_level_integrity(level_filename);
+		cout << level_filename << (is_a_level ? " is an actual level" : " is not an actual level. Totally skipping this one") << ".\n";
+		return !is_a_level;
+	});
+
+	level * levels = new level[level_filenames.size()];
+	WINDOW * mainscreen = initscr();
+
+	//for(unsigned int idx = 0; idx < level_filenames.size(); ++idx)
+		levels[0] = load_level(level_filenames[0], mainscreen);
+
+	levels[0].paint();
+
+	endwin();
+	delete[] levels;
+	levels = NULL;
+	mainscreen = NULL;
 }
 
 //
@@ -242,9 +268,11 @@ bool check_level_integrity(const string & level_filepath) {
 	return !not_ok;
 }
 
-level * load_level(const string & level_filepath) {
+level load_level(const string & level_filepath, WINDOW * const screen) {
 	ifstream lvl(level_filepath, ios::in | ios::binary);
 
+	vector<pair<unsigned short int, unsigned short int>> walls;
+	walls.push_back(make_pair(1, 1));
 
-	return new level(vector<ghost>(), vector<pair<unsigned short int, unsigned short int>>());
+	return level(vector<ghost>(), walls, make_pair(10, 10), screen);
 }

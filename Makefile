@@ -30,14 +30,15 @@ endif
 OBJ = .o
 CPP = c++
 CPPAR = -s -Os -std=c++11 -Wall -Wextra -pipe -fomit-frame-pointer
+LDAR = -lpdcurses
 
 .PHONY : clean
 
-all : CPPac-man.o ghost.o levelmaker
-	$(CPP) $(CPPAR) -oCPPac-man$(EXE) $(filter %.o,$^)
+all : CPPac-man.o ghost.o ghost.hpp level.hpp utils.hpp levelmaker
+	$(CPP) $(CPPAR) $(LDAR) -oCPPac-man$(EXE) $(filter %.o,$^)
 
 levelmaker : levels/lvlgen.o
-	$(CPP) $(CPPAR) -olevels/lvlgen$(EXE) $(filter %.o,$^)
+	$(CPP) $(CPPAR) $(LDAR) -olevels/lvlgen$(EXE) $(filter %.o,$^)
 
 clean :
 	rm -rf *$(OBJ) *$(EXE)

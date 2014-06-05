@@ -23,6 +23,7 @@
 #define UTILS_HPP
 
 #include <cstdio>
+#include <vector>
 
 namespace utils {
 	using namespace std;
