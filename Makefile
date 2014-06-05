@@ -41,6 +41,7 @@ levelmaker : levels/lvlgen.o
 
 clean :
 	rm -rf *$(OBJ) *$(EXE)
+	rm -rf */*$(OBJ) */*$(EXE)
 
 %.o : %.cpp
 	$(CPP) $(CPPAR) -c -o$@ $^
