@@ -182,12 +182,14 @@ int main(int, char * argv[]) {
 		cout << level_filename << (is_a_level ? " is an actual level" : " is not an actual level. Totally skipping this one") << ".\n";
 		return !is_a_level;
 	});
+	if(!level_filenames.size())
+		return 0;
 
 	level * levels = new level[level_filenames.size()];
 	WINDOW * mainscreen = initscr();
 
-	//for(unsigned int idx = 0; idx < level_filenames.size(); ++idx)
-		levels[0] = load_level(level_filenames[0], mainscreen);
+	for(unsigned int idx = 0; idx < level_filenames.size(); ++idx)
+		levels[idx] = load_level(level_filenames[idx]], mainscreen);
 
 	levels[0].paint();
 
