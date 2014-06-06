@@ -56,9 +56,9 @@
 #include <iostream>
 #include <fstream>
 #include <chrono>
+#include <thread>
 #include <algorithm>
-#include <curses.h>
-// <tui.h>?
+#include <tui.h>
 #include "utils.hpp"
 #include "level.hpp"
 #include "ASCII charcodes.hpp"
@@ -111,8 +111,9 @@ using namespace utils;
 //  STX
 //  Any set of characters
 
-level load_level(const string & level_filepath, WINDOW * const screen);
+level load_level(const string & level_filepath, WINDOW *& screen);
 bool check_level_integrity(const string & level_filepath);
+bool check_level_integrity(const level & lvl);
 
 //
 //    /$$$$$$                  /$$
@@ -132,70 +133,59 @@ int main(int, char * argv[]) {
 		const char * const arg = argv[idx];
 		if(*arg == '-' && arg[1]) {
 			if(!memcmp(arg, "--help-level-format", 18)) {
-				cout << "The level format is as follows:\n"
-				        "\n"
-                "SOH\n"
-                "SI\n"
-                "Level's overall height (decimal)\n"
-                ",\n"
-                "Level's overall width (decimal)\n"
-                "SO\n"
-                "EM\n"
-                "SI\n"
-                "Level's overall amount of ghosts (decimal)\n"
-                "\tnow, repeating <Level's overall amount of ghosts> times :\n"
-                "ETB\n"
-                "Ghost's beginning position X (decimal)\n"
-                ",\n"
-                "Ghost's beginning position Y (decimal)\n"
-                ",\n"
-                "Set of ORed attributes (decimal, attr_t)\n"
-                "\tend repeating\n"
-                "SO\n"
-                "EM\n"
-                "SI\n"
-                "Level's overall amount of walls (decimal)\n"
-                "\tnow, repeating <Level's overall amount of walls> times :\n"
-                "ETB\n"
-                "Wall's position X (decimal)\n"
-                ",\n"
-                "Wall's position Y (decimal)\n"
-                "\tend repeating\n"
-                "SO\n"
-                "STX\n"
-                "Any set of characters\n";
+				cout << "The level format is as follows:\n\nSOH\nSI\nLevel's overall height (decimal)\n,\nLevel's overall width (decimal)\nSO\nEM\nSI\nLevel's overall amount of ghosts (decimal)\n"
+                "\tnow, repeating <Level's overall amount of ghosts> times :\nETB\nGhost's beginning position X (decimal)\n,\nGhost's beginning position Y (decimal)\n,\n"
+                "Set of ORed attributes (decimal, attr_t)\n\tend repeating\nSO\nEM\nSI\nLevel's overall amount of walls (decimal)\n\tnow, repeating <Level's overall amount of walls> times :\n"
+                "ETB\nWall's position X (decimal)\n,\nWall's position Y (decimal)\n\tend repeating\nSO\nSTX\nAny set of characters\n";
 				return 0;
 			}
 		}	else
 			level_filenames.emplace_back(arg);
 	}
 
-	unique(level_filenames.begin(), level_filenames.end());
-	remove_if(level_filenames.begin(), level_filenames.end(), [](const string & level_filename) {
-		const bool does_exist = does_file_exist(level_filename.c_str());
-		if(!does_exist)
-			cout << level_filename << " does not exist.\n";
-		return !does_exist;
-	});
-	remove_if(level_filenames.begin(), level_filenames.end(), [](const string & level_filename) {
-		const bool is_a_level = check_level_integrity(level_filename);
-		cout << level_filename << (is_a_level ? " is an actual level" : " is not an actual level. Totally skipping this one") << ".\n";
-		return !is_a_level;
-	});
-	if(!level_filenames.size())
-		return 0;
-
-	level * levels = new level[level_filenames.size()];
 	WINDOW * mainscreen = initscr();
+	clearok(mainscreen, true);
+	level_filenames.erase(unique(level_filenames.begin(), level_filenames.end()), level_filenames.end());
+	level_filenames.erase(remove_if(level_filenames.begin(), level_filenames.end(), [](const string & level_filename) {
+		const bool is_nonexistant = !does_file_exist(level_filename.c_str());
+		if(is_nonexistant)
+			addstr((level_filename + " does not exist.\n").c_str());
+		return is_nonexistant;
+	}), level_filenames.end());
+	level_filenames.erase(remove_if(level_filenames.begin(), level_filenames.end(), [](const string & level_filename) {
+		const bool is_a_level = check_level_integrity(level_filename);
+		addstr((level_filename + (is_a_level ? " is a level" : " is not an actual level. Totally skipping this one") + ".\n").c_str());
+		return !is_a_level;
+	}), level_filenames.end());
+	refresh();
+	getch();
+	if(!level_filenames.size()) {
+		endwin();
+		cout << "No levels left! Quitting!";
+		return 0;
+	}
 
-	for(unsigned int idx = 0; idx < level_filenames.size(); ++idx)
-		levels[idx] = load_level(level_filenames[idx]], mainscreen);
+	vector<level> levels;
+	for(unsigned int idx = 0; idx < level_filenames.size(); ++idx) {
+		levels.push_back(load_level(level_filenames[idx], mainscreen));
+		if(!check_level_integrity(levels.back())) {
+			addstr((level_filenames[idx] + " is corrupt. Totally skipping this one.\n").c_str());
+			levels.erase(levels.begin() + idx);
+		}
+	}
+	if(!level_filenames.size()) {
+		endwin();
+		cout << "No levels left! Quitting!";
+		return 0;
+	}
+	clear();
 
-	levels[0].paint();
+	levels.at(0).paint();
+
+	refresh();
+	getch();
 
 	endwin();
-	delete[] levels;
-	levels = NULL;
 	mainscreen = NULL;
 }
 
@@ -270,11 +260,111 @@ bool check_level_integrity(const string & level_filepath) {
 	return !not_ok;
 }
 
-level load_level(const string & level_filepath, WINDOW * const screen) {
+level load_level(const string & level_filepath, WINDOW *& screen) {
 	ifstream lvl(level_filepath, ios::in | ios::binary);
+	vector<pair<unsigned int, unsigned int>> walls;
+	vector<ghost> ghosts;
 
-	vector<pair<unsigned short int, unsigned short int>> walls;
-	walls.push_back(make_pair(1, 1));
+	lvl.get();
+	lvl.get();
+	pair<unsigned int, unsigned int> level_size;
+	{
+		string level_size_x_string;
+		while(isdigit(lvl.peek()))
+			level_size_x_string.push_back(lvl.get());
+		level_size.first = atoi(level_size_x_string.c_str());
+	}
+	lvl.get();
+	{
+		string level_size_y_string;
+		while(isdigit(lvl.peek()))
+			level_size_y_string.push_back(lvl.get());
+		level_size.second = atoi(level_size_y_string.c_str());
+	}
 
-	return level(vector<ghost>(), walls, make_pair(10, 10), screen);
+	lvl.get();
+	lvl.get();
+	lvl.get();
+
+	unsigned int amount_of_ghosts;
+	{
+		string amount_of_ghosts_string;
+		while(isdigit(lvl.peek()))
+			amount_of_ghosts_string.push_back(lvl.get());
+		amount_of_ghosts = atoi(amount_of_ghosts_string.c_str());
+	}
+	for(unsigned int i = 0; i < amount_of_ghosts; ++i) {
+		lvl.get();
+		pair<int, int> ghost_position;
+		{
+			string ghost_position_x_string;
+			while(isdigit(lvl.peek()))
+				ghost_position_x_string.push_back(lvl.get());
+			ghost_position.first = atoi(ghost_position_x_string.c_str());
+		}
+		lvl.get();
+		{
+			string ghost_position_y_string;
+			while(isdigit(lvl.peek()))
+				ghost_position_y_string.push_back(lvl.get());
+			ghost_position.second = atoi(ghost_position_y_string.c_str());
+		}
+		lvl.get();
+		attr_t ghost_attributes;
+		{
+			string ghost_attributes_string;
+			while(isdigit(lvl.peek()))
+				ghost_attributes_string.push_back(lvl.get());
+			ghost_attributes = atoi(ghost_attributes_string.c_str());
+		}
+		ghosts.emplace_back(ghost_attributes, ghost_position, screen);
+	}
+
+	lvl.get();
+	lvl.get();
+	lvl.get();
+
+	unsigned int amount_of_walls;
+	{
+		string amount_of_walls_string;
+		while(isdigit(lvl.peek()))
+				amount_of_walls_string.push_back(lvl.get());
+		amount_of_walls = atoi(amount_of_walls_string.c_str());
+	}
+	for(unsigned int i = 0; i < amount_of_walls; ++i) {
+		lvl.get();
+		unsigned int wall_position_x;
+		{
+			string wall_position_x_string;
+			while(isdigit(lvl.peek()))
+				wall_position_x_string.push_back(lvl.get());
+			wall_position_x = atoi(wall_position_x_string.c_str());
+		}
+		lvl.get();
+		unsigned int wall_position_y;
+		{
+			string wall_position_y_string;
+			while(isdigit(lvl.peek()))
+				wall_position_y_string.push_back(lvl.get());
+			wall_position_y = atoi(wall_position_y_string.c_str());
+		}
+		walls.emplace_back(wall_position_x, wall_position_y);
+	}
+
+	return level(ghosts, walls, level_size, screen);
+}
+
+bool check_level_integrity(const level & lvl) {
+	bool not_ok = false;
+	for(unsigned int i = 0; i < lvl.amount_walls; ++i) {
+		not_ok |= lvl.places_of_walls[i][0] >= lvl.size.first;
+		not_ok |= lvl.places_of_walls[i][1] >= lvl.size.second;
+	}
+	for(unsigned int i = 0; i < lvl.amount_ghosts; ++i) {
+		not_ok |= lvl.ghosts[i].beginning_position().first >= lvl.size.first;
+		not_ok |= lvl.ghosts[i].beginning_position().second >= lvl.size.second;
+		not_ok |= lvl.ghosts[i].current_position().first >= lvl.size.first;
+		not_ok |= lvl.ghosts[i].current_position().second >= lvl.size.second;
+	}
+	return !not_ok;
 }

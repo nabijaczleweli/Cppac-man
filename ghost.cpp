@@ -24,12 +24,41 @@
 using namespace std;
 
 ghost::ghost() : ghost::ghost(static_cast<attr_t>(-1), make_pair(-1, -1)) {}
-ghost::ghost(attr_t color, pair<int, int> start_pos) {
-	start_pos_x = start_pos.first;
-	start_pos_y = start_pos.second;
-	this->color = color;
-	WINDOW * screen = stdscr;
+ghost::ghost(attr_t color, pair<int, int> start_pos) : ghost::ghost(color, start_pos, stdscr) {}
+ghost::ghost(attr_t newcolor, pair<int, int> start_pos, WINDOW * screen) : paintable(screen), start_pos_x(start_pos.first), start_pos_y(start_pos.second), color(newcolor) {
+	reset();
 }
-ghost::ghost(attr_t color, pair<int, int> start_pos, WINDOW * screen) : ghost::ghost(color, start_pos) {
-	this->screen = screen;
+ghost::ghost(ghost && gho) : paintable(paintable::screen), start_pos_x(gho.start_pos_x), start_pos_y(gho.start_pos_y), cur_pos_x(gho.cur_pos_x), cur_pos_y(gho.cur_pos_y), color(gho.color) {
+	gho.screen      = NULL;
+	gho.start_pos_x = -1;
+	gho.start_pos_y = -1;
+	gho.cur_pos_x   = -1;
+	gho.cur_pos_y   = -1;
+	gho.color       = -1;
+}
+ghost::ghost(const ghost & gho) : paintable(paintable::screen), start_pos_x(gho.start_pos_x), start_pos_y(gho.start_pos_y), cur_pos_x(gho.cur_pos_x), cur_pos_y(gho.cur_pos_y), color(gho.color) {}
+
+ghost & ghost::operator=(const ghost & gho) {
+	start_pos_x = gho.start_pos_x;
+	start_pos_y = gho.start_pos_y;
+	cur_pos_x   = gho.cur_pos_x;
+	cur_pos_y   = gho.cur_pos_y;
+	color       = gho.color;
+	return *this;
+};
+
+void ghost::paint() {
+
+}
+
+void ghost::reset() {
+	cur_pos_x = start_pos_x;
+	cur_pos_y = start_pos_y;
+}
+
+pair<unsigned int, unsigned int> ghost::beginning_position() {
+	return make_pair(start_pos_x, start_pos_y);
+}
+pair<unsigned int, unsigned int> ghost::current_position() {
+	return make_pair(cur_pos_x, cur_pos_y);
 }

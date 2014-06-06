@@ -25,78 +25,68 @@
 
 #include <utility>
 #include <vector>
-#include <curses.h>
+#include <fstream>
+#include <tui.h>
 #include "ghost.hpp"
 
 namespace {
 	using namespace std;
 
-	struct level {
+	class level : public paintable {
 		public:
-			const ghost * ghosts;
-			unsigned short int amount_ghosts;
+			ghost * ghosts;
+			unsigned int amount_ghosts;
 
 			unsigned int amount_walls;
-			const pair<unsigned short int, unsigned short int> * places_of_walls;
-			pair<unsigned short int, unsigned short int> size;  // X, Y
-			WINDOW * screen;
-		private:
-			char ** cache = NULL;
-			void make_cache() {
-				cache = new char*[size.first];
-				for(unsigned short int i = 0; i < size.second; ++i)
-					cache[i] = new char[size.second];
-				for(unsigned short int x = 0; x < size.first; ++x)
-					for(unsigned short int y = 0; y < size.second; ++y)
-						cache[x][y] = ' ';
-				for(unsigned short int pofw = 0; pofw < amount_walls; ++pofw) {
-					const auto & wall = places_of_walls[pofw];
-					cache[wall.first][wall.second] = '#';
+			unsigned int ** places_of_walls;
+			pair<unsigned int, unsigned int> size;  // X, Y
+
+			level() : level(vector<ghost>(), vector<pair<unsigned int, unsigned int>>(), make_pair(-1, -1), NULL) {}
+			level(const vector<ghost> & ghosts_v, const vector<pair<unsigned int, unsigned int>> & walls_v, pair<unsigned int, unsigned int> lvlsize, WINDOW * lvlscreen) :
+			                                                               paintable(lvlscreen), ghosts(new ghost[ghosts_v.size()]), amount_ghosts(ghosts_v.size()),
+			                                                               amount_walls(walls_v.size()), size(lvlsize) {
+				places_of_walls = new unsigned int*[amount_walls];
+				for(unsigned int i = 0; i < amount_walls; ++i) {
+					places_of_walls[i] = new unsigned int[2];
+					places_of_walls[i][0] = walls_v[i].first;
+					places_of_walls[i][1] = walls_v[i].second;
+				}
+				for(ghost * gho = ghosts; gho < (ghosts + amount_ghosts); ++gho) {
+					*gho = ghosts_v[gho - ghosts];
+					gho->reset();
 				}
 			}
-		public:
-			level() : level(vector<ghost>(), vector<pair<unsigned short int, unsigned short int>>(), make_pair(-1, -1), NULL) {}
-			level(const vector<ghost> & ghosts_v, const vector<pair<unsigned short int, unsigned short int>> & walls_v, pair<unsigned short int, unsigned short int> lvlsize, WINDOW * lvlscreen) :
-			                                                               ghosts(new ghost[ghosts_v.size()]), amount_ghosts(ghosts_v.size()), amount_walls(walls_v.size()),
-			                                                               places_of_walls(new pair<unsigned short int, unsigned short int>[walls_v.size()]), size(lvlsize), screen(lvlscreen) {
-				memcpy(const_cast<pair<unsigned short int, unsigned short int> *>(places_of_walls), walls_v.data(), amount_walls);
-				memcpy(const_cast<ghost *>(ghosts), ghosts_v.data(), amount_ghosts);
-			}
 			level(const level &) = delete;
-			level(level && lvl) {
+			level(level && lvl) : paintable(lvl.screen) {
 			  amount_ghosts = lvl.amount_ghosts;
 			  amount_walls = lvl.amount_walls;
 			  ghosts = lvl.ghosts;
 			  places_of_walls = lvl.places_of_walls;
-			  size.first = lvl.size.first;
-			  size.second = lvl.size.second;
-			  screen = lvl.screen;
+			  size = lvl.size;
 
 			  lvl.amount_ghosts = -1;
 			  lvl.amount_walls = -1;
 			  lvl.ghosts = NULL;
 			  lvl.places_of_walls = NULL;
-			  lvl.size.first = -1;
-			  lvl.size.second = -1;
+			  lvl.size = make_pair(-1, -1);
 			  lvl.screen = NULL;
 			}
 
 			~level() {
 				if(ghosts)
 					delete[] ghosts;
-				if(places_of_walls)
-					delete[] places_of_walls;
-				if(cache) {
-					for(unsigned short int x = 0; x < size.first; ++x) {
-						delete[] cache[x];
-						cache[x] = NULL;
+				if(places_of_walls) {
+					for(unsigned int i = 0; i < amount_walls; ++i) {
+						places_of_walls[i][0] = -1;
+						places_of_walls[i][1] = -1;
+						delete[] places_of_walls[i];
+						places_of_walls[i] = NULL;
 					}
-					delete[] cache;
+					delete[] places_of_walls;
 				}
 
 				ghosts          = NULL;
 				places_of_walls = NULL;
-				cache           = NULL;
 
 				amount_walls  = -1;
 				amount_ghosts = -1;
@@ -108,27 +98,33 @@ namespace {
 			  amount_ghosts = lvl.amount_ghosts;
 			  amount_walls = lvl.amount_walls;
 			  ghosts = new ghost[lvl.amount_ghosts];
-			  places_of_walls = new pair<unsigned short int, unsigned short int>[lvl.amount_walls];
-				memcpy(const_cast<pair<unsigned short int, unsigned short int> *>(places_of_walls), lvl.places_of_walls, amount_walls);
+			  places_of_walls = new unsigned int*[amount_walls];
+				for(unsigned int i = 0; i < amount_walls; ++i) {
+					places_of_walls[i] = new unsigned int[2];
+					places_of_walls[i][0] = lvl.places_of_walls[i][0];
+					places_of_walls[i][1] = lvl.places_of_walls[i][1];
+				}
 				memcpy(const_cast<ghost *>(ghosts), lvl.ghosts, amount_ghosts);
-			  size.first = lvl.size.first;
-			  size.second = lvl.size.second;
+			  size = lvl.size;
 			  screen = lvl.screen;
 				return *this;
 			}
 
 			void paint() {
-				if(!cache)
-					make_cache();
-				for(unsigned short int x = 0; x < size.first; ++x)
-					for(unsigned short int y = 0; y < size.second; ++y)
-						mvwaddch(screen, y, x, cache[x][y]);
-				wrefresh(screen);
+				clear();
+				for(unsigned int i = 0; i < amount_walls; ++i)
+					mvaddch(places_of_walls[i][1], places_of_walls[i][0], '#');
+				for(unsigned int i = 0; i < amount_ghosts; ++i)
+					ghosts[i].paint();
 			}
 
-			void paint(WINDOW * screen) {
-				this->screen = screen;
-				paint();
+			void paint(WINDOW *& scr) {
+				paintable::paint(scr);
+				wclear(scr);
+				for(unsigned int i = 0; i < amount_walls; ++i)
+					mvaddch(places_of_walls[i][1], places_of_walls[i][0], '#');
+				for(unsigned int i = 0; i < amount_ghosts; ++i)
+					ghosts[i].paintable::paint(scr);
 			}
 	};
 }

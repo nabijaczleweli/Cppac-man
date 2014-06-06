@@ -24,7 +24,7 @@ ifeq ($(OS),Windows_NT)
   EXE = .exe
 else
   MV = mv
-  EXE =
+  EXE = .out
 endif
 
 OBJ = .o
