@@ -19,24 +19,51 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-#ifndef PAINTABLE_HPP
-#define PAINTABLE_HPP
+#ifndef RUNTIME__DL_LS_HPP
+#define RUNTIME__DL_LS_HPP
 
-#include <tui.h>
+#ifdef _WIN32
+	#define WIN32_LEAN_AND_MEAN
+	#include <windows.h>
+#else
+	#include <dlfcn.h>
+#endif
 
-class paintable {
-	protected:
-		WINDOW * screen;
-	public:
-		paintable(WINDOW * scr) : screen(scr) {}
-		virtual ~paintable() {}
+typedef void * dllhandle;
 
-		virtual void paint() = 0;
-		void paint(WINDOW *& screen) {
-			this->screen = screen;
-			paint();
-		}
-};
+constexpr dllhandle load_library(const char * const libpath, const int open_params) {
+	return libpath ?
+#ifdef _WIN32
+	LoadLibrary(libpath) + (open_params - open_params)
+#else
+	dlopen(libpath, open_params)
+#endif
+	: NULL;
+}
 
-#endif  // PAINTABLE_HPP
+constexpr void * get_library_function_address(const dllhandle dll, const char * const function_name) {
+	return (dll && function_name) ?
+#ifdef _WIN32
+	(void *)GetProcAddress((HMODULE)dll, function_name)
+#else
+	dlsym(dll, function_name);
+#endif
+	: NULL;
+}
 
+template<class Ret, class... Args>
+constexpr auto get_library_function(const dllhandle dll, const char * const function_name) -> Ret(*)(Args...) {
+	return (Ret(*)(Args...))get_library_function_address(dll, function_name);
+}
+
+void unload_library(const dllhandle dll) {
+	if(!dll)
+		return;
+#ifdef _WIN32
+	FreeLibrary((HMODULE)dll);
+#else
+	dlclose(dll);
+#endif
+}
+
+#endif  // RUNTIME__DL_LS_HPP

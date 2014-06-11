@@ -19,24 +19,30 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-#ifndef PAINTABLE_HPP
-#define PAINTABLE_HPP
+#ifndef PACMAN_HPP
+#define PACMAN_HPP
 
+#include <cstring>
+#include <utility>
 #include <tui.h>
+#include "paintable.hpp"
+#include "direction.hpp"
 
-class paintable {
-	protected:
-		WINDOW * screen;
+class pacman : public paintable {
+	private:
+		unsigned int * starting_position, * current_position;
+		direction looking = direction::right;
 	public:
-		paintable(WINDOW * scr) : screen(scr) {}
-		virtual ~paintable() {}
+		pacman();
+		pacman(const std::pair<unsigned int, unsigned int> &, WINDOW *);
+		~pacman();
 
-		virtual void paint() = 0;
-		void paint(WINDOW *& screen) {
-			this->screen = screen;
-			paint();
-		}
+		pacman & operator=(const pacman &);
+
+		std::pair<unsigned int, unsigned int> beginning_position();
+		std::pair<unsigned int, unsigned int> actual_position();
+		void paint();
+		void reset() noexcept;
 };
 
-#endif  // PAINTABLE_HPP
-
+#endif  // PACMAN_HPP

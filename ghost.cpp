@@ -20,12 +20,16 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include "ghost.hpp"
+#include <fstream>
+#include <typeinfo>
+#include "Runtime DLLs.hpp"
 
 using namespace std;
 
 ghost::ghost() : ghost::ghost(static_cast<attr_t>(-1), make_pair(-1, -1)) {}
-ghost::ghost(attr_t color, pair<int, int> start_pos) : ghost::ghost(color, start_pos, stdscr) {}
+ghost::ghost(attr_t newcolor, pair<int, int> start_pos) : ghost::ghost(newcolor, start_pos, stdscr) {}
 ghost::ghost(attr_t newcolor, pair<int, int> start_pos, WINDOW * screen) : paintable(screen), start_pos_x(start_pos.first), start_pos_y(start_pos.second), color(newcolor) {
+	reactions = load_library("pdcurses.dll", 0);
 	reset();
 }
 ghost::ghost(ghost && gho) : paintable(paintable::screen), start_pos_x(gho.start_pos_x), start_pos_y(gho.start_pos_y), cur_pos_x(gho.cur_pos_x), cur_pos_y(gho.cur_pos_y), color(gho.color) {
@@ -37,6 +41,10 @@ ghost::ghost(ghost && gho) : paintable(paintable::screen), start_pos_x(gho.start
 	gho.color       = -1;
 }
 ghost::ghost(const ghost & gho) : paintable(paintable::screen), start_pos_x(gho.start_pos_x), start_pos_y(gho.start_pos_y), cur_pos_x(gho.cur_pos_x), cur_pos_y(gho.cur_pos_y), color(gho.color) {}
+
+ghost::~ghost() {
+	unload_library(reactions);
+}
 
 ghost & ghost::operator=(const ghost & gho) {
 	start_pos_x = gho.start_pos_x;

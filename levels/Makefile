@@ -20,32 +20,22 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 ifeq ($(OS),Windows_NT)
-  EXE = .exe
-  nop = echo > nul
+	EXE = .exe
 else
-  EXE = .out
-  nop = echo > /dev/nul
+	EXE = .out
 endif
 
 OBJ = .o
 CPP = c++
 CPPAR = -s -Os -std=c++11 -Wall -Wextra -pipe -fomit-frame-pointer
-NOLINKSUBPROJS = levels
-LINKSUBPROJS =
-SUBPROJS = $(NOLINKSUBPROJS) $(LINKSUBPROJS)
-LDAR = -lpdcurses $(foreach linksubproj,$(LINKSUBPROJS),-L./$(linksubproj) -l$(linksubproj))
 
-.PHONY : clean all $(SUBPROJS)
+.PHONY : clean
 
-all : $(addsuffix .MAKE.DIR,$(SUBPROJS)) ghost$(OBJ) pacman$(OBJ) utils$(OBJ) CPPac-man$(OBJ)
-	$(CPP) $(CPPAR) $(LDAR) -oCPPac-man$(EXE) $(filter %$(OBJ),$^)
+all : lvlgen$(OBJ)
+	$(CPP) $(CPPAR) -olvlgen$(EXE) $(filter %.o,$^)
 
 clean :
-	$(foreach subproj,$(SUBPROJS),$(MAKE) -C $(subproj) clean &&) $(nop)
-	rm -rf *$(OBJ) *$(EXE)
+	rm -rf *$(EXE) *$(OBJ)
 
-%.MAKE.DIR :
-	$(MAKE) -C $(@:.MAKE.DIR=)
-
-%$(OBJ) : %.cpp
+%.o : %.cpp
 	$(CPP) $(CPPAR) -c -o$@ $^

@@ -24,29 +24,31 @@
 
 #include <utility>
 #include <cstddef>
-#include "paintable.hpp"
 #include <tui.h>
+#include "paintable.hpp"
 
 class ghost : public paintable {
 	private:
-		int start_pos_x = -1;
-		int start_pos_y = -1;
-		int cur_pos_x   = -1;
-		int cur_pos_y   = -1;
-		attr_t color    = -1;
+		int start_pos_x             = -1;
+		int start_pos_y             = -1;
+		int cur_pos_x               = -1;
+		int cur_pos_y               = -1;\
+		attr_t color                = -1;
+		const char * reactions_name = NULL;
 	public:
+		void * reactions;
 		ghost();
 		ghost(attr_t color, std::pair<int, int> start_pos);
 		ghost(attr_t color, std::pair<int, int> start_pos, WINDOW * screen);
 		ghost(const ghost &);
 		ghost(ghost &&);
-
+		~ghost();
 		ghost & operator=(const ghost &);
-
 		void paint();
 		void reset();
 		std::pair<unsigned int, unsigned int> beginning_position();
 		std::pair<unsigned int, unsigned int> current_position();
 };
+
 
 #endif  // GHOST_HPP

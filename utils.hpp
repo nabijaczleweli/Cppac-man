@@ -28,20 +28,11 @@
 namespace utils {
 	using namespace std;
 
-	bool does_file_exist(const char * const filename) {
-		FILE * file = fopen(filename, "r");
-		if(file)
-			fclose(file);
-		return file;
-	}
-
+	bool does_file_exist(const char * const filename);
 	template<class T>
-	T * tmemcpy(T * const dest, const T * const src, size_t amount) {
-		T * to_compare = dest + amount;
-		for(T * dp = dest, * sp = src; dp < to_compare; ++dp, ++sp)
-			*dp = *sp;
-		return src;
-	}
+	T * tmemcpy(T * const dest, const T * const src, size_t amount);
+	template<class T>
+	T * tmemmove(T * const dest, const T * const src, size_t amount);
 }  // utils
 
 #endif  // UTILS_HPP

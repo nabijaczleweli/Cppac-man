@@ -19,24 +19,11 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-#ifndef PAINTABLE_HPP
-#define PAINTABLE_HPP
+#ifndef DIRECTION_HPP
+#define DIRECTION_HPP
 
-#include <tui.h>
-
-class paintable {
-	protected:
-		WINDOW * screen;
-	public:
-		paintable(WINDOW * scr) : screen(scr) {}
-		virtual ~paintable() {}
-
-		virtual void paint() = 0;
-		void paint(WINDOW *& screen) {
-			this->screen = screen;
-			paint();
-		}
+enum direction : unsigned short int {
+	left, right, up, down,
 };
 
-#endif  // PAINTABLE_HPP
-
+#endif  // DIRECTION_HPP

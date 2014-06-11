@@ -19,7 +19,6 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-
 #ifndef LEVEL_HPP
 #define LEVEL_HPP
 
@@ -28,6 +27,7 @@
 #include <fstream>
 #include <tui.h>
 #include "ghost.hpp"
+#include "pacman.hpp"
 
 namespace {
 	using namespace std;
@@ -40,11 +40,12 @@ namespace {
 			unsigned int amount_walls;
 			unsigned int ** places_of_walls;
 			pair<unsigned int, unsigned int> size;  // X, Y
+			pacman * pac_man;
 
-			level() : level(vector<ghost>(), vector<pair<unsigned int, unsigned int>>(), make_pair(-1, -1), NULL) {}
-			level(const vector<ghost> & ghosts_v, const vector<pair<unsigned int, unsigned int>> & walls_v, pair<unsigned int, unsigned int> lvlsize, WINDOW * lvlscreen) :
+			level() : level(vector<ghost>(), vector<pair<unsigned int, unsigned int>>(), make_pair(-1, -1), NULL, pacman()) {}
+			level(const vector<ghost> & ghosts_v, const vector<pair<unsigned int, unsigned int>> & walls_v, pair<unsigned int, unsigned int> lvlsize, WINDOW * lvlscreen, const pacman & new_pac) :
 			                                                               paintable(lvlscreen), ghosts(new ghost[ghosts_v.size()]), amount_ghosts(ghosts_v.size()),
-			                                                               amount_walls(walls_v.size()), size(lvlsize) {
+			                                                               amount_walls(walls_v.size()), size(lvlsize), pac_man(new pacman) {
 				places_of_walls = new unsigned int*[amount_walls];
 				for(unsigned int i = 0; i < amount_walls; ++i) {
 					places_of_walls[i] = new unsigned int[2];
@@ -55,14 +56,16 @@ namespace {
 					*gho = ghosts_v[gho - ghosts];
 					gho->reset();
 				}
+				*pac_man = new_pac;
 			}
-			level(const level &) = delete;
-			level(level && lvl) : paintable(lvl.screen) {
+			level(const level &) noexcept = delete;
+			level(level && lvl) noexcept : paintable(lvl.screen) {
 			  amount_ghosts = lvl.amount_ghosts;
 			  amount_walls = lvl.amount_walls;
 			  ghosts = lvl.ghosts;
 			  places_of_walls = lvl.places_of_walls;
 			  size = lvl.size;
+			  pac_man = lvl.pac_man;
 
 			  lvl.amount_ghosts = -1;
 			  lvl.amount_walls = -1;
@@ -70,9 +73,10 @@ namespace {
 			  lvl.places_of_walls = NULL;
 			  lvl.size = make_pair(-1, -1);
 			  lvl.screen = NULL;
+			  lvl.pac_man = NULL;
 			}
 
-			~level() {
+			~level() noexcept {
 				if(ghosts)
 					delete[] ghosts;
 				if(places_of_walls) {
@@ -84,9 +88,12 @@ namespace {
 					}
 					delete[] places_of_walls;
 				}
+				if(pac_man)
+					delete pac_man;
 
 				ghosts          = NULL;
 				places_of_walls = NULL;
+				pac_man         = NULL;
 
 				amount_walls  = -1;
 				amount_ghosts = -1;
@@ -116,6 +123,7 @@ namespace {
 					mvaddch(places_of_walls[i][1], places_of_walls[i][0], '#');
 				for(unsigned int i = 0; i < amount_ghosts; ++i)
 					ghosts[i].paint();
+				pac_man->paint();
 			}
 
 			void paint(WINDOW *& scr) {
@@ -125,9 +133,9 @@ namespace {
 					mvaddch(places_of_walls[i][1], places_of_walls[i][0], '#');
 				for(unsigned int i = 0; i < amount_ghosts; ++i)
 					ghosts[i].paintable::paint(scr);
+				pac_man->paintable::paint(scr);
 			}
 	};
 }
-
 
 #endif  // LEVEL_HPP

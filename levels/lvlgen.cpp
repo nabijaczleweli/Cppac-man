@@ -57,5 +57,5 @@ int main(int, char * argv[]) {
 	ofile << CHR_SO << CHR_EM << CHR_SI << wall_amount;
 	for(int i = 0; i < wall_amount; ++i)
 		ofile << CHR_ETB << "<wall pos x>,<wall pos y>";
-	ofile << CHR_SO << CHR_STX << '_';
+	ofile << CHR_SO << CHR_EM << CHR_SI << "<pac pos x>,<pac pos y>" << CHR_SO << CHR_STX << '_';
 }

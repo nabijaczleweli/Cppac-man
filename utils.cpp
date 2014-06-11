@@ -19,24 +19,26 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-#ifndef PAINTABLE_HPP
-#define PAINTABLE_HPP
+#include "utils.hpp"
 
-#include <tui.h>
-
-class paintable {
-	protected:
-		WINDOW * screen;
-	public:
-		paintable(WINDOW * scr) : screen(scr) {}
-		virtual ~paintable() {}
-
-		virtual void paint() = 0;
-		void paint(WINDOW *& screen) {
-			this->screen = screen;
-			paint();
-		}
-};
-
-#endif  // PAINTABLE_HPP
-
+bool utils::does_file_exist(const char * const filename) {
+	FILE * file = fopen(filename, "r");
+	if(file)
+		fclose(file);
+	return file;
+}
+template<class T>
+T * utils::tmemcpy(T * const dest, const T * const src, size_t amount) {
+	T * to_compare = dest + amount;
+	for(T * dp = dest, * sp = src; dp < to_compare; ++dp, ++sp)
+		*dp = *sp;
+	return src;
+}
+template<class T>
+T * utils::tmemmove(T * const dest, const T * const src, size_t amount) {
+	T * temp = new T[amount];
+	tmemcpy<T>(temp, src, amount);
+	tmemcpy<T>(dest, temp, amount);
+	delete[] temp;
+	return src;
+}
