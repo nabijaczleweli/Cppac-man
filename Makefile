@@ -20,16 +20,21 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 ifeq ($(OS),Windows_NT)
-  EXE = .exe
-  nop = echo > nul
+EXE = .exe
+nop = echo > nul
+SYSLDAR = -lkernel32
 else
-  EXE = .out
-  nop = echo > /dev/nul
+EXE = .out
+nop = echo > /dev/nul
+SYSLDAR = -ldl
 endif
 
 OBJ = .o
 CPP = c++
-CPPAR = -s -Os -std=c++11 -Wall -Wextra -pipe -fomit-frame-pointer
+CPPAR = -Os -std=c++11 -Wall -Wextra -pipe -fomit-frame-pointer -shared-libstdc++
+# Is "-shared-libstdc++" OK? Does everything support that? Does it make sence?
+STRIP = strip
+STRIPAR = --strip-all --remove-section=.comment --remove-section=.note
 NOLINKSUBPROJS = levels
 LINKSUBPROJS =
 SUBPROJS = $(NOLINKSUBPROJS) $(LINKSUBPROJS)
@@ -38,7 +43,8 @@ LDAR = -lpdcurses $(foreach linksubproj,$(LINKSUBPROJS),-L./$(linksubproj) -l$(l
 .PHONY : clean all $(SUBPROJS)
 
 all : $(addsuffix .MAKE.DIR,$(SUBPROJS)) ghost$(OBJ) pacman$(OBJ) utils$(OBJ) CPPac-man$(OBJ)
-	$(CPP) $(CPPAR) $(LDAR) -oCPPac-man$(EXE) $(filter %$(OBJ),$^)
+	$(CPP) $(CPPAR) $(LDAR) $(SYSLDAR) -oCPPac-man$(EXE) $(filter %$(OBJ),$^)
+	$(STRIP) $(STRIPAR) CPPac-man$(EXE) -oCPPac-man$(EXE)
 
 clean :
 	$(foreach subproj,$(SUBPROJS),$(MAKE) -C $(subproj) clean &&) $(nop)
