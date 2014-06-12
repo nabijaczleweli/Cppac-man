@@ -19,48 +19,30 @@
 # IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-ifeq "$(OS)" "Windows_NT"
-	EXE = .exe
-	SYSLDAR = -lkernel32
-	nop = echo > nul
-else
-	EXE = .out
-	SYSLDAR = -ldl
-	nop = echo > /dev/null
-endif
-
-# VERY IMPORTANT NOTE :
-#  For me, LD cannot link to -L$(var) -l$(var), nor can it -L. -l$(var), it's just broken.
-#  This is all a hack, pretty much.
-#  I hope this gets fixed, or maybe that I am doing something wrong...
-
-OBJ = .o
-ARCH = .a
-AR = ar
-CPP = c++
-CPPAR = -Os -std=c++11 -Wall -Wextra -pipe -fomit-frame-pointer -shared-libstdc++
-# Is "-shared-libstdc++" OK? Does everything support that? Does it make sence?
-STRIP = strip
-STRIPAR = --strip-all --remove-section=.comment --remove-section=.note
 NOLINKSUBPROJS = levels
 LINKSUBPROJS = RuntimeDLLs
 SUBPROJS = $(NOLINKSUBPROJS) $(LINKSUBPROJS)
 LDAR = -lpdcurses
-OBJFILESDIR = objects
+
+# VERY IMPORTANT NOTE :
+#  For me, LD cannot link to -L$(var) -l$(var), it just seems broken.
+#  This is all a hack, pretty much.
+#  I hope this gets fixed, or maybe that I am doing something wrong...
 
 .PHONY : clean all unpackarchs $(SUBPROJS)
 
 all : $(addsuffix .MAKE.DIR,$(SUBPROJS)) unpackarchs ghost$(OBJ) pacman$(OBJ) utils$(OBJ) CPPac-man$(OBJ)
-	$(CPP) $(CPPAR) $(SYSLDAR) $(LDAR) -oCPPac-man$(EXE) $(OBJFILESDIR)/*$(OBJ)
+	$(AR) libcompilepack$(ARCH) $(OBJFILESDIR)/*$(OBJ)
+	$(CPP) $(CPPAR) $(SYSLDAR) $(LDAR) -oCPPac-man$(EXE) -L. -lcompilepack
 	$(STRIP) $(STRIPAR) CPPac-man$(EXE) -oCPPac-man$(EXE)
-	rm -rf $(OBJFILESDIR)
 
 clean :
 	$(foreach subproj,$(SUBPROJS),$(MAKE) -C $(subproj) clean &&) $(nop)
-	rm -rf *$(OBJ) *$(EXE)
+	rm -rf *$(OBJ) *$(EXE) *$(ARCH)
+	rm -rf $(OBJFILESDIR)
 
 unpackarchs : $(addsuffix .MAKE.DIR,$(LINKSUBPROJS))
-ifeq "$(findstring $(OBJFILESDIR),$(basename $(dir $(shell ls))))" ""
+ifeq "$(findstring $(OBJFILESDIR),$(shell find . -maxdepth 1 -type d))" ""
 	mkdir $(OBJFILESDIR)
 endif
 	$(foreach subproj,$(^:.MAKE.DIR=),cp $(subproj)/lib$(subproj)$(ARCH) $(OBJFILESDIR)/lib$(shell echo $(subproj) | tr A-Z a-z)$(ARCH) &&) $(nop)

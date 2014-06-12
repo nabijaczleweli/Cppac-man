@@ -19,26 +19,17 @@
 # IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-ifeq ($(OS),Windows_NT)
-	EXE = .exe
-else
-	EXE = .out
-endif
+include ../configMakefile
 
-OBJ = .o
-ARCHIVE = .a
-CPP = c++
-AR = ar
-CPPAR = -Os -std=c++11 -Wall -Wextra -pipe -fomit-frame-pointer
 VARIATIONS = load_library get_library_function_address unload_library
 
 .PHONY : clean all
 
 all : $(foreach variation,$(VARIATIONS),RuntimeDLLs__$(variation)$(OBJ))
-	$(AR) cr libRuntimeDLLs$(ARCHIVE) $(filter %.o,$^)
+	$(AR) cr libRuntimeDLLs$(ARCH) $(filter %.o,$^)
 
 clean :
-	rm -rf *$(ARCHIVE) *$(OBJ)
+	rm -rf *$(ARCH) *$(OBJ)
 
 %.o : %.cpp
 	$(CPP) $(CPPAR) -c -o$@ $^

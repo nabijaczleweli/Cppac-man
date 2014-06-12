@@ -19,15 +19,22 @@
 # IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-include ../configMakefile
+ifeq "$(OS)" "Windows_NT"
+	EXE = .exe
+	SYSLDAR = -lkernel32
+	nop = echo > nul
+else
+	EXE = .out
+	SYSLDAR = -ldl
+	nop = echo > /dev/null
+endif
 
-.PHONY : clean all
-
-all : lvlgen$(OBJ)
-	$(CPP) $(CPPAR) -olvlgen$(EXE) $(filter %.o,$^)
-
-clean :
-	rm -rf *$(EXE) *$(OBJ)
-
-%.o : %.cpp
-	$(CPP) $(CPPAR) -c -o$@ $^
+OBJ = .o
+ARCH = .a
+AR = ar
+CPP = c++
+CPPAR = -Os -std=c++11 -Wall -Wextra -pipe -fomit-frame-pointer -shared-libstdc++
+# Is "-shared-libstdc++" OK? Does everything support that? Does it make sence?
+STRIP = strip
+STRIPAR = --strip-all --remove-section=.comment --remove-section=.note
+OBJFILESDIR = objects

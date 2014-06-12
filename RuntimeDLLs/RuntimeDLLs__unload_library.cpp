@@ -21,14 +21,13 @@
 
 #include "RuntimeDLLs.hpp"
 
-extern "C" {
-	void unload_library(const dllhandle dll) {
-		if(!dll)
-			return;
+extern "C"
+void unload_library(const dllhandle dll) {
+	if(!dll)
+		return;
 #ifdef _WIN32
-		FreeLibrary((HMODULE)dll);
+	FreeLibrary((HMODULE)dll);
 #else
-		dlclose(dll);
+	dlclose(dll);
 #endif
-	}
 }
