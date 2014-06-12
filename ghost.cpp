@@ -21,26 +21,30 @@
 
 #include "ghost.hpp"
 #include <fstream>
-#include <typeinfo>
-#include "Runtime DLLs.hpp"
+#include "RuntimeDLLs/RuntimeDLLs.hpp"
 
 using namespace std;
 
-ghost::ghost() : ghost::ghost(static_cast<attr_t>(-1), make_pair(-1, -1)) {}
-ghost::ghost(attr_t newcolor, pair<int, int> start_pos) : ghost::ghost(newcolor, start_pos, stdscr) {}
-ghost::ghost(attr_t newcolor, pair<int, int> start_pos, WINDOW * screen) : paintable(screen), start_pos_x(start_pos.first), start_pos_y(start_pos.second), color(newcolor) {
-	reactions = load_library("pdcurses.dll", 0);
+ghost::ghost() : ghost::ghost(static_cast<attr_t>(-1), make_pair(-1, -1), static_cast<const char *>(NULL)) {}
+ghost::ghost(attr_t newcolor, pair<int, int> start_pos, WINDOW * screen) : ghost::ghost(newcolor, start_pos, NULL, screen) {}
+ghost::ghost(attr_t newcolor, pair<int, int> start_pos, const char * const dll_filename) : ghost::ghost(newcolor, start_pos, dll_filename, stdscr) {}
+ghost::ghost(attr_t newcolor, pair<int, int> start_pos, const char * const dll_filename, WINDOW * screen) : paintable(screen), start_pos_x(start_pos.first), start_pos_y(start_pos.second),
+                                                                                                            color(newcolor) {
+	reactions = load_library(dll_filename, 0);
 	reset();
 }
-ghost::ghost(ghost && gho) : paintable(paintable::screen), start_pos_x(gho.start_pos_x), start_pos_y(gho.start_pos_y), cur_pos_x(gho.cur_pos_x), cur_pos_y(gho.cur_pos_y), color(gho.color) {
+ghost::ghost(ghost && gho) : paintable(paintable::screen), start_pos_x(gho.start_pos_x), start_pos_y(gho.start_pos_y), cur_pos_x(gho.cur_pos_x), cur_pos_y(gho.cur_pos_y), color(gho.color),
+                             reactions(gho.reactions) {
 	gho.screen      = NULL;
 	gho.start_pos_x = -1;
 	gho.start_pos_y = -1;
 	gho.cur_pos_x   = -1;
 	gho.cur_pos_y   = -1;
 	gho.color       = -1;
+	gho.reactions   = NULL;
 }
-ghost::ghost(const ghost & gho) : paintable(paintable::screen), start_pos_x(gho.start_pos_x), start_pos_y(gho.start_pos_y), cur_pos_x(gho.cur_pos_x), cur_pos_y(gho.cur_pos_y), color(gho.color) {}
+ghost::ghost(const ghost & gho) : paintable(paintable::screen), start_pos_x(gho.start_pos_x), start_pos_y(gho.start_pos_y), cur_pos_x(gho.cur_pos_x), cur_pos_y(gho.cur_pos_y), color(gho.color),
+                                  reactions(gho.reactions) {}
 
 ghost::~ghost() {
 	unload_library(reactions);

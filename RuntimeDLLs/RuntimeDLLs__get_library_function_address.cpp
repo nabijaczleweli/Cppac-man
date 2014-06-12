@@ -19,36 +19,16 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-#ifndef GHOST_HPP
-#define GHOST_HPP
+#include "RuntimeDLLs.hpp"
 
-#include <utility>
-#include <cstddef>
-#include <tui.h>
-#include "paintable.hpp"
-
-class ghost : public paintable {
-	private:
-		int start_pos_x  = -1;
-		int start_pos_y  = -1;
-		int cur_pos_x    = -1;
-		int cur_pos_y    = -1;
-		attr_t color     = -1;
-		void * reactions = NULL;
-	public:
-		ghost();
-		ghost(attr_t color, std::pair<int, int> start_pos, WINDOW * screen);
-		ghost(attr_t color, std::pair<int, int> start_pos, const char * const dll_filename);
-		ghost(attr_t color, std::pair<int, int> start_pos, const char * const dll_filename, WINDOW * screen);
-		ghost(const ghost &);
-		ghost(ghost &&);
-		~ghost();
-		ghost & operator=(const ghost &);
-		void paint();
-		void reset();
-		std::pair<unsigned int, unsigned int> beginning_position();
-		std::pair<unsigned int, unsigned int> current_position();
-};
-
-
-#endif  // GHOST_HPP
+extern "C" {
+	void * get_library_function_address(const dllhandle dll, const char * const function_name) {
+		return (dll && function_name) ?
+#ifdef _WIN32
+		(void *)GetProcAddress((HMODULE)dll, function_name)
+#else
+		dlsym(dll, function_name);
+#endif
+		: NULL;
+	}
+}
