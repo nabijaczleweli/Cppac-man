@@ -142,19 +142,21 @@ int main(int, char * argv[]) {
 	for(unsigned int idx = 1; argv[idx]; ++idx) {
 		const char * const arg = argv[idx];
 		if(*arg == '-' && arg[1]) {
-			if(!memcmp(arg, "--help-level-format", 18)) {
-				cout << "Level format is as follows:\nSOH\nSI\nLevel's overall height (decimal)\n,\nLevel's overall width (decimal)\nSO\nEM\nSI\nLevel's overall amount of ghosts (decimal)\n\tnow, "
-				        "repeating Level's overall amount of ghosts times :\nETB\nGhost's beginning position X (decimal)\n,\nGhost's beginning position Y (decimal)\n,\nSet of ORed attributes (decimal"
-				        ", attr_t)\n,\nPath to library with ghost's logic (string, (isalnum || isspace || isprint))\n  end repeating\nSO\nEM\nSI\nLevel's overall amount of walls (decimal)\n\tnow, "
-                "repeating Level's overall amount of walls times :\nETB\nWall's position X (decimal)\n,\nWall's position Y (decimal)\n  end repeating\nSO\nEM\nSI\nPacman's beginning position X "
-                "(decimal)\n,\nPacman's beginning position Y (decimal)\nSO\nSTX\nAny set of characters (string, at least 1)\n";
-				return 0;
-			} else if(!memcmp(arg, "--help", 7)) {
-				cout << "Usage: " << argv[0] << " [arguments] level...\n"
-				        "Arguments:\n"
-				        "\t--help: display this help screen.\n"
-				        "\t--help-level-format: display information about format of levels.";
-				return 0;
+			if(!memcmp(arg, "--help", 6)) {
+				if(!arg[7]) {
+					cout << "Usage: " << argv[0] << " [arguments] level...\n"
+					        "Arguments:\n"
+					        "\t--help: display this help screen.\n"
+					        "\t--help-level-format: display information about format of levels.";
+					return 0;
+				} else if(!memcmp(arg + 6, "-level-format", 12)) {
+					cout << "The level format is as follows:\n\nSOH\nSI\nLevel's overall height (decimal)\n,\nLevel's overall width (decimal)\nSO\nEM\nSI\nLevel's overall amount of ghosts (decimal)\n\tnow,"
+					        " repeating Level's overall amount of ghosts times :\nETB\nGhost's beginning position X (decimal)\n,\nGhost's beginning position Y (decimal)\n,\nSet of ORed attributes (decimal"
+					        ", attr_t)\n,\nPath to library with ghost's logic (string, (isalnum || isspace || isprint))\n  end repeating\nSO\nEM\nSI\nLevel's overall amount of walls (decimal)\n\tnow, "
+        	        "repeating Level's overall amount of walls times :\nETB\nWall's position X (decimal)\n,\nWall's position Y (decimal)\n  end repeating\nSO\nEM\nSI\nPacman's beginning position X "
+        	        "(decimal)\n,\nPacman's beginning position Y (decimal)\nSO\nSTX\nAny set of characters (string, at least 1)\n";
+					return 0;
+				}
 			}
 		}	else
 			level_filenames.emplace_back(arg);
