@@ -97,6 +97,8 @@ using namespace utils;
 //  Ghost's beginning position Y (decimal)
 //  ,
 //  Set of ORed attributes (decimal, attr_t)
+//  ,
+//  Path to library with ghost's logic (string, (isalnum || isspace || isprint))
 //    end repeating
 //  SO
 //  EM
@@ -116,11 +118,12 @@ using namespace utils;
 //  Pacman's beginning position Y (decimal)
 //  SO
 //  STX
-//  Any set of characters
+//  Any set of characters (string, at least 1)
 
 level load_level(const string & level_filepath, WINDOW *& screen);
 bool check_level_integrity(const string & level_filepath);
 bool check_level_integrity(const level & lvl);
+constexpr bool ispath(int ch);
 
 //
 //    /$$$$$$                  /$$
@@ -140,12 +143,11 @@ int main(int, char * argv[]) {
 		const char * const arg = argv[idx];
 		if(*arg == '-' && arg[1]) {
 			if(!memcmp(arg, "--help-level-format", 18)) {
-				cout << "Level format is as follows:\nSOH\nSI\nLevel's overall height (decimal)\n,\nLevel's overall width (decimal)\nSO\nEM\nSI\nLevel's overall amount of ghosts (decimal)\n"
-                "\tnow, repeating Level's overall amount of ghosts times :\nETB\nGhost's beginning position X (decimal)\n,\nGhost's beginning position Y (decimal)\n,\n"
-                "Set of ORed attributes (decimal, attr_t)\n\tend repeating\nSO\nEM\nSI\nLevel's overall amount of walls (decimal)\n\tnow, repeating Level's overall amount of walls times :\n"
-                "ETB\nWall's position X (decimal)\n,\nWall's position Y (decimal)\n\tend repeating\nSO\nEM\nSI\nPacman's beginning position X (decimal)\n,\n"
-                "Pacman's beginning position Y (decimal)\nSO\nSTX\nAny set of characters\n"
-				;
+				cout << "Level format is as follows:\nSOH\nSI\nLevel's overall height (decimal)\n,\nLevel's overall width (decimal)\nSO\nEM\nSI\nLevel's overall amount of ghosts (decimal)\n\tnow, "
+				        "repeating Level's overall amount of ghosts times :\nETB\nGhost's beginning position X (decimal)\n,\nGhost's beginning position Y (decimal)\n,\nSet of ORed attributes (decimal"
+				        ", attr_t)\n,\nPath to library with ghost's logic (string, (isalnum || isspace || isprint))\n  end repeating\nSO\nEM\nSI\nLevel's overall amount of walls (decimal)\n\tnow, "
+                "repeating Level's overall amount of walls times :\nETB\nWall's position X (decimal)\n,\nWall's position Y (decimal)\n  end repeating\nSO\nEM\nSI\nPacman's beginning position X "
+                "(decimal)\n,\nPacman's beginning position Y (decimal)\nSO\nSTX\nAny set of characters (string, at least 1)\n";
 				return 0;
 			} else if(!memcmp(arg, "--help", 7)) {
 				cout << "Usage: " << argv[0] << " [arguments] level...\n"
@@ -225,6 +227,10 @@ int main(int, char * argv[]) {
 //
 //
 
+constexpr bool ispath(int ch) {
+	return isalnum(ch) | isspace(ch) | isprint(ch);
+}
+
 bool check_level_integrity(const string & level_filepath) {
 	ifstream lvl(level_filepath, ios::in | ios::binary);
 	bool not_ok = false;
@@ -254,8 +260,11 @@ bool check_level_integrity(const string & level_filepath) {
 		while(lvl.peek() != ',' && lvl.peek() != ifstream::traits_type::eof())
 			not_ok |= !isdigit(lvl.get());
 		not_ok |= lvl.get() != ',';
-		while(!(lvl.peek() == CHR_ETB || lvl.peek() == CHR_SO) && lvl.peek() != ifstream::traits_type::eof())
+		while(lvl.peek() != ',' && lvl.peek() != ifstream::traits_type::eof())
 			not_ok |= !isdigit(lvl.get());
+		not_ok |= lvl.get() != ',';
+		while(!(lvl.peek() == CHR_ETB || lvl.peek() == CHR_SO) && lvl.peek() != ifstream::traits_type::eof())
+			not_ok |= !ispath(lvl.get());
 		if(i >= amount_of_ghosts_int - 1)
 			not_ok |= lvl.get() != CHR_SO;
 	}
@@ -348,7 +357,11 @@ level load_level(const string & level_filepath, WINDOW *& screen) {
 				ghost_attributes_string.push_back(lvl.get());
 			ghost_attributes = atoi(ghost_attributes_string.c_str());
 		}
-		ghosts.emplace_back(ghost_attributes, ghost_position, screen);
+		lvl.ignore(1);
+		string ghost_logic_path;
+		while(lvl.peek() != CHR_SO)
+			ghost_logic_path.push_back(lvl.get());
+		ghosts.emplace_back(ghost_attributes, ghost_position, ghost_logic_path.c_str(), screen);
 	}
 
 	lvl.ignore(3);
@@ -414,9 +427,10 @@ bool check_level_integrity(const level & lvl) {
 		not_ok |= lvl.ghosts[i].beginning_position().second >= level_height;
 		not_ok |= lvl.ghosts[i].current_position().first >= level_width;
 		not_ok |= lvl.ghosts[i].current_position().second >= level_height;
+		not_ok |= !ghost::check_ghost_dynamic_integrity(lvl.ghosts[i]);
 	}
 	if(!lvl.pac_man)
-		throw bad_alloc();
+		throw bad_alloc();  // Any better exception here?
 	not_ok |= lvl.pac_man->beginning_position().first >= level_width;
 	not_ok |= lvl.pac_man->beginning_position().second >= level_height;
 	not_ok |= lvl.pac_man->actual_position().first >= level_width;

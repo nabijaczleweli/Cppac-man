@@ -48,12 +48,21 @@ int main(int, char * argv[]) {
 	if(wall_amount <= 0)
 		wall_amount = 10;
 
-	printf("Making level-file of name \"%s\" with %d ghosts and %d walls.\nNote: you MUST edit the file and put the proper data into it.", output_filename.c_str(), ghost_amount, wall_amount);
+	printf("Making level-file of name \"%s\" with %d ghost%s and %d wall%s.\nNote: you MUST edit the file and put the proper data into it.", output_filename.c_str(), ghost_amount,
+	       (ghost_amount - 1) ? "s" : "", wall_amount, (wall_amount - 1) ? "s" : "");
 
 	ofstream ofile(output_filename);
 	ofile << CHR_SOH << CHR_SI << "<lvl he>,<lvl wi>" << CHR_SO << CHR_EM << CHR_SI << ghost_amount;
 	for(int i = 0; i < ghost_amount; ++i)
-		ofile << CHR_ETB << "<ghost pos x>,<ghost pos y>,<attrs>";
+		ofile << CHR_ETB << "<ghost pos x>,<ghost pos y>,<attrs>,<ghost logic library path>."
+#ifdef _WIN32
+	"dll"
+#elif defined(__APPLE__)
+	"dylib"
+#else
+	"so"
+#endif
+	;
 	ofile << CHR_SO << CHR_EM << CHR_SI << wall_amount;
 	for(int i = 0; i < wall_amount; ++i)
 		ofile << CHR_ETB << "<wall pos x>,<wall pos y>";

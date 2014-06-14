@@ -21,9 +21,10 @@
 
 #include "ghost.hpp"
 #include <fstream>
-#include "RuntimeDLLs/RuntimeDLLs.hpp"
 
 using namespace std;
+
+const constexpr static chtype ghost_character = '@';
 
 ghost::ghost() : ghost::ghost(static_cast<attr_t>(-1), make_pair(-1, -1), static_cast<const char *>(NULL)) {}
 ghost::ghost(attr_t newcolor, pair<int, int> start_pos, WINDOW * screen) : ghost::ghost(newcolor, start_pos, NULL, screen) {}
@@ -60,7 +61,9 @@ ghost & ghost::operator=(const ghost & gho) {
 };
 
 void ghost::paint() {
-
+	attron(color);
+	mvaddch(cur_pos_y, cur_pos_x, ghost_character);
+	attroff(color);
 }
 
 void ghost::reset() {

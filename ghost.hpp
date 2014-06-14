@@ -26,16 +26,29 @@
 #include <cstddef>
 #include <tui.h>
 #include "paintable.hpp"
+#include "RuntimeDLLs/RuntimeDLLs.hpp"
 
 class ghost : public paintable {
 	private:
-		int start_pos_x  = -1;
-		int start_pos_y  = -1;
-		int cur_pos_x    = -1;
-		int cur_pos_y    = -1;
-		attr_t color     = -1;
-		void * reactions = NULL;
+		int start_pos_x     = -1;
+		int start_pos_y     = -1;
+		int cur_pos_x       = -1;
+		int cur_pos_y       = -1;
+		attr_t color        = -1;
+		dllhandle reactions = NULL;
+		constexpr static const char * const ghost_dynamic_function_get_desired_coords_name = "desired_tile";
+		constexpr static const char * const ghost_dynamic_function_get_mode_name = "ghost_mode";
+		// More to come...
 	public:
+		static bool check_ghost_dynamic_integrity(const ghost & gho) {
+			bool not_ok = false;
+			not_ok |= !gho.reactions;
+			not_ok |= !get_library_function_address(gho.reactions, ghost_dynamic_function_get_desired_coords_name);
+			not_ok |= !get_library_function_address(gho.reactions, ghost_dynamic_function_get_mode_name);
+			// More to come...
+			return !not_ok;
+		}
+
 		ghost();
 		ghost(attr_t color, std::pair<int, int> start_pos, WINDOW * screen);
 		ghost(attr_t color, std::pair<int, int> start_pos, const char * const dll_filename);

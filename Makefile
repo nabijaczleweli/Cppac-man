@@ -19,6 +19,8 @@
 # IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+include configMakefile
+
 NOLINKSUBPROJS = levels
 LINKSUBPROJS = RuntimeDLLs
 SUBPROJS = $(NOLINKSUBPROJS) $(LINKSUBPROJS)
@@ -32,7 +34,7 @@ LDAR = -lpdcurses
 .PHONY : clean all unpackarchs $(SUBPROJS)
 
 all : $(addsuffix .MAKE.DIR,$(SUBPROJS)) unpackarchs ghost$(OBJ) pacman$(OBJ) utils$(OBJ) CPPac-man$(OBJ)
-	$(AR) libcompilepack$(ARCH) $(OBJFILESDIR)/*$(OBJ)
+	$(AR) cr libcompilepack$(ARCH) $(OBJFILESDIR)/*$(OBJ)
 	$(CPP) $(CPPAR) $(SYSLDAR) $(LDAR) -oCPPac-man$(EXE) -L. -lcompilepack
 	$(STRIP) $(STRIPAR) CPPac-man$(EXE) -oCPPac-man$(EXE)
 

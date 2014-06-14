@@ -22,7 +22,7 @@
 #include "RuntimeDLLs.hpp"
 
 extern "C"
-constexpr void * get_library_function_address(const dllhandle dll, const char * const function_name) {
+void * get_library_function_address(const dllhandle dll, const char * const function_name) {
 	return (dll && function_name) ?
 #ifdef _WIN32
 	(void *)GetProcAddress((HMODULE)dll, function_name)

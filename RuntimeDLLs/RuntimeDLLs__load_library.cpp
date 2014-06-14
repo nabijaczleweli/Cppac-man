@@ -25,7 +25,7 @@ extern "C"
 dllhandle load_library(const char * const libpath, const int open_params) {
 	return libpath ?
 #ifdef _WIN32
-	LoadLibrary(libpath) + (open_params - open_params)
+	LoadLibrary(libpath) + (0 * open_params)
 #else
 	dlopen(libpath, open_params)
 #endif

@@ -120,7 +120,7 @@ namespace {
 			void paint() {
 				clear();
 				for(unsigned int i = 0; i < amount_walls; ++i)
-					mvaddch(places_of_walls[i][1], places_of_walls[i][0], '#');
+					mvaddch(places_of_walls[i][1], places_of_walls[i][0], '\262');
 				for(unsigned int i = 0; i < amount_ghosts; ++i)
 					ghosts[i].paint();
 				pac_man->paint();
@@ -130,7 +130,7 @@ namespace {
 				paintable::paint(scr);
 				wclear(scr);
 				for(unsigned int i = 0; i < amount_walls; ++i)
-					mvaddch(places_of_walls[i][1], places_of_walls[i][0], '#');
+					mvaddch(places_of_walls[i][1], places_of_walls[i][0], '\262');
 				for(unsigned int i = 0; i < amount_ghosts; ++i)
 					ghosts[i].paintable::paint(scr);
 				pac_man->paintable::paint(scr);
